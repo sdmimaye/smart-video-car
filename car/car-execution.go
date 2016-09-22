@@ -43,11 +43,7 @@ func Execute(c *Car, stream stream.Stream) {
 			fmt.Fprint(w, "Please enter your next command:\r\n[0] Calibrate\r\n[1] Steer\r\n")
 			reader := bufio.NewReader(r)
 
-			command, err := reader.ReadString('\n')
-			if err != nil {
-				stream.Close()
-			}
-
+			command, _ := reader.ReadString('\n')
 			if strings.HasPrefix(command, "0") {
 				err := doCalibrate(c, stream)
 				if err != nil {
