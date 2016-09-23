@@ -29,6 +29,29 @@ func doCalibrate(c *Car, stream stream.Stream) error {
 }
 
 func doSteer(c *Car, stream stream.Stream) error {
+	r := stream.GetReader()
+	w := stream.GetWriter()
+	reader := bufio.NewReader(r)
+
+	var s SteeringEngine
+	fmt.Fprint(w, "Please select your steering method:\r\n[0] UDP\r\n")
+	command, _ := reader.ReadString('\n')
+	if strings.HasPrefix(command, "0") {
+		s = UDPSteeringEngine{}
+	} else {
+		return fmt.Errorf("Unknown steering method: %v\r\n", command)
+	}
+
+	err := s.StartEngine(c)
+	if err != nil {
+		return fmt.Errorf("Could not start steering method: %v. Error: %v", command, err)
+	}
+	fmt.Fprint(w, "Press any key to exit steering\r\n")
+	reader.ReadString('\n')
+	err = s.EndEngine()
+	if err != nil {
+		return fmt.Errorf("Could not stop steering method: %v. Error: %v", command, err)
+	}
 	return nil
 }
 
