@@ -113,14 +113,14 @@ func doLoadIniWithMatchingSectionOrCreateEmptyForServo(section int) (*ini.File, 
 	}
 
 	if !sec.Haskey("Min") {
-		_, err = sec.NewKey("Min", "0")
+		_, err = sec.NewKey("Min", "90")
 		if err != nil {
 			return nil, nil, errors.New("Could not generate Min-Value for Section. Error: " + err.Error())
 		}
 	}
 
 	if !sec.Haskey("Max") {
-		_, err = sec.NewKey("Max", "180")
+		_, err = sec.NewKey("Max", "90")
 		if err != nil {
 			return nil, nil, errors.New("Could not generate Max-Value for Section. Error: " + err.Error())
 		}
@@ -160,6 +160,7 @@ func (s *CalibratedServo) Calibrate(stream stream.Stream) error {
 	if err != nil {
 		return fmt.Errorf("Could not store configuration for servo: %v. Error: %v", s.channel, err)
 	}
+	s.servo.SetAngle(s.center)
 
 	return nil
 }

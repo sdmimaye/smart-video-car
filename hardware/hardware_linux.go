@@ -72,12 +72,17 @@ func InitializeServoController() error {
 
 	pca = pca9685.New(bus, 0x40)
 	pca.Freq = 50
+	err = pca.Wake()
+	if err != nil {
+		return fmt.Errorf("Could not wake pwm I²C Bus. Reason: %v", err)
+	}
 
 	return nil
 }
 
 //InitializeMotorController will initialize the GPIO-Pins responsible for the motor movement
 func InitializeMotorController() error {
+	log.Println("Initializing GPIO pins")
 	err := embd.InitGPIO()
 	if err != nil {
 		return fmt.Errorf("Could not initialize motor controller. Error: %v", err)
@@ -89,11 +94,16 @@ func InitializeMotorController() error {
 //DeInitializeServoController will deinitialize the I²C bus
 func DeInitializeServoController() error {
 	if pca == nil {
-		log.Println("I²C is already deinitialized... skipped\n")
+		log.Println("I²C is already deinitialized... skipped")
 		return nil
 	}
 
-	err := pca.Close()
+	err := pca.Sleep()
+	if err != nil {
+		return fmt.Errorf("Could set sleep PCA. Error: %v", err)
+	}
+
+	err = pca.Close()
 	if err != nil {
 		return fmt.Errorf("Could not close PCA. Error: %v", err)
 	}

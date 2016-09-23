@@ -20,7 +20,6 @@ func NewCar() (*Car, error) {
 	if err != nil {
 		return nil, errors.New("Could not create calibrated Motor for car. Error: " + err.Error())
 	}
-
 	steering, err := components.NewCalibratedSteering()
 	if err != nil {
 		return nil, errors.New("Could not create calibrated Steering for car. Error: " + err.Error())

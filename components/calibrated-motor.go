@@ -78,7 +78,7 @@ func getPinAndSetToOutput(pin int) (hardware.Pin, error) {
 	}
 	err = p.SetDirection(hardware.Out)
 	if err != nil {
-		return nil, fmt.Errorf("Could not set GPIO Pin: %v to out direction", pin)
+		log.Printf("Warning. Could not set GPIO direction for pin: %v. If the application was started a second time everything is fine. Otherwise a hardware error occured. Error: %v", pin, err)
 	}
 
 	return p, nil
