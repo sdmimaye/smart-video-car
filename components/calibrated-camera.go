@@ -164,6 +164,16 @@ func (s *CalibratedCamera) Calibrate(stream stream.Stream) error {
 	return nil
 }
 
+//CenterLeftRight will move the camera in the home position (left/rigth)
+func (s *CalibratedCamera) CenterLeftRight() error {
+	return s.servos[s.left.index].Home()
+}
+
+//CenterUpDown will move the camera in the home position (up/down)
+func (s *CalibratedCamera) CenterUpDown() error {
+	return s.servos[s.up.index].Home()
+}
+
 //MoveUp will move the camera in an up position
 func (s *CalibratedCamera) MoveUp(percent float64) error {
 	return s.servos[s.up.index].Move(percent, s.up.sign)

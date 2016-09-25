@@ -9,23 +9,54 @@ import (
 	"sdmimaye.de/smart-video-car/stream"
 )
 
+type execution struct {
+	motor    bool
+	steering bool
+	camera   bool
+}
+
 func doCalibrate(c *Car, stream stream.Stream) error {
-	err := c.Motor.Calibrate(stream)
-	if err != nil {
-		return err
-	}
+	r := stream.GetReader()
+	w := stream.GetWriter()
 
-	err = c.Steering.Calibrate(stream)
-	if err != nil {
-		return err
-	}
+	for {
+		_, err := fmt.Fprint(w, "Please choose which part you want to calibrate:\r\n[0] Everything\r\n[1] Motor\r\n[2] Steering\r\n[3] Camera\r\nAnything else will bring you back to the previous selection\r\n")
+		reader := bufio.NewReader(r)
+		command, _ := reader.ReadString('\n')
+		var exe execution
 
-	err = c.Camera.Calibrate(stream)
-	if err != nil {
-		return err
-	}
+		if strings.HasPrefix(command, "0") {
+			exe = execution{true, true, true}
+		} else if strings.HasPrefix(command, "1") {
+			exe = execution{true, false, false}
+		} else if strings.HasPrefix(command, "2") {
+			exe = execution{false, true, false}
+		} else if strings.HasPrefix(command, "3") {
+			exe = execution{false, false, true}
+		}
 
-	return nil
+		if exe.motor {
+			err = c.Motor.Calibrate(stream)
+			if err != nil {
+				return err
+			}
+		}
+		if exe.steering {
+			err = c.Steering.Calibrate(stream)
+			if err != nil {
+				return err
+			}
+		}
+		if exe.camera {
+			err = c.Camera.Calibrate(stream)
+			if err != nil {
+				return err
+			}
+		}
+		if !exe.camera && !exe.motor && !exe.steering {
+			return nil
+		}
+	}
 }
 
 func doSteer(c *Car, stream stream.Stream) error {
@@ -46,12 +77,9 @@ func doSteer(c *Car, stream stream.Stream) error {
 	if err != nil {
 		return fmt.Errorf("Could not start steering method: %v. Error: %v", command, err)
 	}
+	defer s.EndEngine()
 	fmt.Fprint(w, "Press any key to exit steering\r\n")
 	reader.ReadString('\n')
-	err = s.EndEngine()
-	if err != nil {
-		return fmt.Errorf("Could not stop steering method: %v. Error: %v", command, err)
-	}
 	return nil
 }
 
@@ -77,6 +105,8 @@ func Execute(c *Car, stream stream.Stream) {
 				if err != nil {
 					fmt.Fprintf(w, "Error while steering car. Error: %v\r\n", err)
 				}
+			} else {
+				return
 			}
 		}
 	})

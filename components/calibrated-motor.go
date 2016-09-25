@@ -15,12 +15,12 @@ import (
 )
 
 const (
-	motor0Pin0     = 11
-	motor0Pin1     = 12
-	motor1Pin0     = 13
-	motor1Pin1     = 14
-	speedPwmMotor0 = 4
-	speedPwmMotor1 = 5
+	motor0Pin0     = 17
+	motor0Pin1     = 18
+	motor1Pin0     = 27
+	motor1Pin1     = 22
+	speedPwmMotor1 = 4
+	speedPwmMotor0 = 5
 )
 
 type motorCabling int
@@ -125,7 +125,16 @@ func (m *CalibratedMotor) Calibrate(stream stream.Stream) error {
 
 	reader := bufio.NewReader(r)
 	fmt.Fprint(w, "The first wheel will move in one direction. Please pay attention!\r\n")
-	err := m.m0.p0.Write(hardware.High)
+	err := hardware.SetPwmValue(m.m0.speedPwmChannel, 0, 2000)
+	if err != nil {
+		return fmt.Errorf("Could not set speed via pwm channel: %v. Error: %v", m.m0.speedPwmChannel, err)
+	}
+	err = hardware.SetPwmValue(m.m1.speedPwmChannel, 0, 2000)
+	if err != nil {
+		return fmt.Errorf("Could not set speed via pwm channel: %v. Error: %v", m.m1.speedPwmChannel, err)
+	}
+
+	err = m.m0.p0.Write(hardware.High)
 	if err != nil {
 		return fmt.Errorf("Could not set pin %v to high. Error: %v", motor0Pin0, err)
 	}
@@ -138,6 +147,10 @@ func (m *CalibratedMotor) Calibrate(stream stream.Stream) error {
 		m.m0.cabling = p1ForwardP0Backward
 	} else {
 		fmt.Fprint(w, "Skipping configuration for first wheel...\r\n")
+	}
+	err = m.m0.p0.Write(hardware.Low)
+	if err != nil {
+		return fmt.Errorf("Could not set pin %v to low. Error: %v", motor0Pin0, err)
 	}
 
 	fmt.Fprint(w, "The second wheel will move in one direction. Please pay attention!\r\n")
@@ -155,12 +168,16 @@ func (m *CalibratedMotor) Calibrate(stream stream.Stream) error {
 	} else {
 		fmt.Fprint(w, "Skipping configuration for second wheel...\r\n")
 	}
+	err = m.m1.p0.Write(hardware.Low)
+	if err != nil {
+		return fmt.Errorf("Could not set pin %v to low. Error: %v", motor1Pin0, err)
+	}
 
 	return nil
 }
 
 //SetSpeed will set the speed of the motor
-func (m *CalibratedMotor) SetSpeed(value int) error {
+func (m *CalibratedMotor) SetSpeed(value int32) error {
 	value *= 40
 	pwm := int(math.Min(4096, math.Abs(float64(value))))
 	err0 := hardware.SetPwmValue(m.m0.speedPwmChannel, 0, pwm)

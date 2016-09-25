@@ -68,6 +68,7 @@ func (s *CalibratedServo) Move(percent float64, direction float64) error {
 	} else {
 		direction = 1
 	}
+	log.Printf("Movement of Servo: %v, Direction: %v, Percent: %v", s.channel, direction, percent)
 
 	return doCalculatePercentOfAndSteer(s, percent*direction)
 }

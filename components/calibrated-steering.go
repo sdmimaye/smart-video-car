@@ -122,6 +122,11 @@ func (c *CalibratedSteering) Calibrate(stream stream.Stream) error {
 	return nil
 }
 
+//Center will reset the steering and move in the home position
+func (c *CalibratedSteering) Center() error {
+	return c.servo.Home()
+}
+
 //SteerLeft will steer the vehicle in a left position
 func (c *CalibratedSteering) SteerLeft(percent float64) error {
 	return c.servo.Move(percent, c.left)

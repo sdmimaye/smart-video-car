@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-
-	"github.com/sigurn/crc8"
 )
 
 var socket *net.UDPConn
@@ -37,14 +35,19 @@ func (s UDPSteeringEngine) StartEngine(c *Car) error {
 			cnt, remote, err := socket.ReadFromUDP(buffer[:])
 			if err == nil {
 				log.Printf("UDP Message received: Sender: %v, Length: %v, Data: %v", remote, cnt, buffer[:cnt])
-
-				table := crc8.MakeTable(crc8.CRC8)
-				chksum := crc8.Checksum(buffer[:31], table)
-				if chksum == buffer[31] {
-					doHandleCommand(c, buffer[:cnt])
-				} else {
-					log.Printf("Checksum Error, got: %v, expected: %v", buffer[31], chksum)
+				err = doHandleCommand(c, buffer[:cnt])
+				if err != nil {
+					log.Printf("Error while handling command: %v\n", err)
 				}
+				/*
+					table := crc8.MakeTable(crc8.CRC8)
+					chksum := crc8.Checksum(buffer[:31], table)
+					if chksum == buffer[31] {
+						doHandleCommand(c, buffer[:cnt])
+					} else {
+						log.Printf("Checksum Error, got: %v, expected: %v", buffer[31], chksum)
+					}
+				*/
 			} else {
 				log.Printf("Error while receving UDP Commands: %v\n", err)
 				s.EndEngine()
@@ -59,13 +62,13 @@ func doHandleCommand(c *Car, command []byte) error {
 	reader := bytes.NewReader(command)
 	order := binary.BigEndian
 
-	speed := int(0)
+	speed := int32(0)
 	err := binary.Read(reader, order, &speed)
 	if err != nil {
-		return errors.New("Could not read speed from command bytes")
+		return errors.New("Could not read speed from command bytes. Error: " + err.Error())
 	}
 
-	direction := byte(0)
+	direction := int8(0)
 	err = binary.Read(reader, order, &direction)
 	if err != nil {
 		return errors.New("Could not read direction from command bytes")
@@ -77,7 +80,7 @@ func doHandleCommand(c *Car, command []byte) error {
 		return errors.New("Could not read direction-percent from command bytes")
 	}
 
-	camupdown := byte(0)
+	camupdown := int8(0)
 	err = binary.Read(reader, order, &camupdown)
 	if err != nil {
 		return errors.New("Could not read camera up/down from command bytes")
@@ -89,7 +92,7 @@ func doHandleCommand(c *Car, command []byte) error {
 		return errors.New("Could not read camera up/down-percent from command bytes")
 	}
 
-	camleftright := byte(0)
+	camleftright := int8(0)
 	err = binary.Read(reader, order, &camleftright)
 	if err != nil {
 		return errors.New("Could not read camera left/right from command bytes")
@@ -101,18 +104,25 @@ func doHandleCommand(c *Car, command []byte) error {
 		return errors.New("Could not read camera left/right-percent from command bytes")
 	}
 
+	log.Printf("Speed: %v, Direction: %v, CamUpDown: %v, CamUpDownPerc: %v, CamLeftRight: %v, CamLeftRightPerc: %v", speed, direction, camupdown, cudpercent, camleftright, clrpercent)
+
 	err = c.Motor.SetSpeed(speed)
 	if err != nil {
 		return fmt.Errorf("Could not accelerate/decelerate. Error: %v", err)
 	}
 
 	switch direction {
-	case 0: //left
+	case 0: //nothing
+		err := c.Steering.Center()
+		if err != nil {
+			return fmt.Errorf("Could not center steer. Error: %v", err)
+		}
+	case 1: //left
 		err = c.Steering.SteerLeft(dirpercent)
 		if err != nil {
 			return fmt.Errorf("Could not steer left. Error: %v", err)
 		}
-	case 1: //right
+	case 2: //right
 		err = c.Steering.SteerRight(dirpercent)
 		if err != nil {
 			return fmt.Errorf("Could not steer right. Error: %v", err)
@@ -122,12 +132,17 @@ func doHandleCommand(c *Car, command []byte) error {
 	}
 
 	switch camupdown {
-	case 0: //up
+	case 0: //home
+		err := c.Camera.CenterUpDown()
+		if err != nil {
+			return fmt.Errorf("Could not center camera up/down. Error: %v", err)
+		}
+	case 1: //up
 		err = c.Camera.MoveUp(cudpercent)
 		if err != nil {
 			return fmt.Errorf("Could not move camera up. Error: %v", err)
 		}
-	case 1: //down
+	case 2: //down
 		err = c.Camera.MoveDown(cudpercent)
 		if err != nil {
 			return fmt.Errorf("Could not move camera down. Error: %v", err)
@@ -137,12 +152,17 @@ func doHandleCommand(c *Car, command []byte) error {
 	}
 
 	switch camleftright {
-	case 0: //left
+	case 0: //home
+		err := c.Camera.CenterLeftRight()
+		if err != nil {
+			return fmt.Errorf("Could not center camera left/right. Error: %v", err)
+		}
+	case 1: //left
 		err = c.Camera.MoveLeft(clrpercent)
 		if err != nil {
 			return fmt.Errorf("Could not move camera left. Error: %v", err)
 		}
-	case 1: //right
+	case 2: //right
 		err = c.Camera.MoveRight(clrpercent)
 		if err != nil {
 			return fmt.Errorf("Could not move camera right. Error: %v", err)

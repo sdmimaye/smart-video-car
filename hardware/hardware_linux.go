@@ -47,6 +47,7 @@ func (p LinuxPin) Read() (PinLevel, error) {
 
 //Write will read the current level of a GPIO pin
 func (p LinuxPin) Write(level PinLevel) error {
+	log.Printf("Writing: %v on gpio pin: %v", level, p.pin.N())
 	err := p.pin.Write(int(level))
 	if err != nil {
 		return fmt.Errorf("Could not write to GPIO pin. Error: %v", err)
@@ -93,6 +94,7 @@ func InitializeMotorController() error {
 
 //DeInitializeServoController will deinitialize the I²C bus
 func DeInitializeServoController() error {
+	log.Println("Closing I²C...")
 	if pca == nil {
 		log.Println("I²C is already deinitialized... skipped")
 		return nil
@@ -118,6 +120,7 @@ func DeInitializeServoController() error {
 
 //DeInitializeMotorController will deinitialize the GPIO-Pins responsible for the motor movement
 func DeInitializeMotorController() error {
+	log.Println("Closing GPIO...")
 	err := embd.CloseGPIO()
 	if err != nil {
 		return fmt.Errorf("Could not deinitialize motor controller. Error: %v", err)
