@@ -41,7 +41,7 @@ func doCalculatePercentOfAndSteer(s *CalibratedServo, percent float64) error {
 	value := 0.0
 
 	if percent >= 0 && percent <= 100 { //positive movement
-		value = center + ((max - center) / 100 * percent)
+		value = max + ((center - max) / 100 * percent)
 	} else if percent < 0 && percent >= -100 { //negative movement
 		value = min + ((center - min) / 100 * percent)
 	} else {
