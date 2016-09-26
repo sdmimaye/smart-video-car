@@ -177,17 +177,20 @@ func (m *CalibratedMotor) Calibrate(stream stream.Stream) error {
 }
 
 //SetSpeed will set the speed of the motor
-func (m *CalibratedMotor) SetSpeed(value int32) error {
-	value *= 40
-	pwm := int(math.Min(4096, math.Abs(float64(value))))
+func (m *CalibratedMotor) SetSpeed(speedPercentage float64) error {
+	if speedPercentage > 100 || speedPercentage < -100 {
+		return fmt.Errorf("Invalid speed percentage value: %v. Choose a valud between 100 and -100", speedPercentage)
+	}
+
+	pwm := int(math.Abs(40.96 * speedPercentage))
 	err0 := hardware.SetPwmValue(m.m0.speedPwmChannel, 0, pwm)
 	err1 := hardware.SetPwmValue(m.m1.speedPwmChannel, 0, pwm)
 
 	if err0 != nil || err1 != nil {
-		return fmt.Errorf("Could not set motor speed to: %v. Errors: %v, %v", value, err0, err1)
+		return fmt.Errorf("Could not set motor speed to: %v percent. Errors: %v, %v", speedPercentage, err0, err1)
 	}
 
-	if value > 0 { //we are moving forward
+	if speedPercentage > 0 { //we are moving forward
 		if m.m0.cabling == p0ForwardP1Backward {
 			m.m0.p0.Write(hardware.High)
 			m.m0.p1.Write(hardware.Low)
@@ -203,7 +206,7 @@ func (m *CalibratedMotor) SetSpeed(value int32) error {
 			m.m1.p0.Write(hardware.Low)
 			m.m1.p1.Write(hardware.High)
 		}
-	} else if value < 0 { //we are moving backward
+	} else if speedPercentage < 0 { //we are moving backward
 		if m.m0.cabling == p0ForwardP1Backward {
 			m.m0.p0.Write(hardware.Low)
 			m.m0.p1.Write(hardware.High)

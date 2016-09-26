@@ -62,7 +62,7 @@ func doHandleCommand(c *Car, command []byte) error {
 	reader := bytes.NewReader(command)
 	order := binary.BigEndian
 
-	speed := int32(0)
+	speed := float64(0)
 	err := binary.Read(reader, order, &speed)
 	if err != nil {
 		return errors.New("Could not read speed from command bytes. Error: " + err.Error())
