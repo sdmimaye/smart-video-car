@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"hash/crc32"
 	"log"
 	"net"
 )
@@ -30,7 +31,7 @@ func (s UDPSteeringEngine) StartEngine(c *Car) error {
 
 	log.Printf("Listening for incomming UDP instructions on Port: %v\n", addr.Port)
 	go func() {
-		var buffer [32]byte
+		var buffer [64]byte
 		for socket != nil {
 			cnt, remote, err := socket.ReadFromUDP(buffer[:])
 			if err == nil {
@@ -39,15 +40,6 @@ func (s UDPSteeringEngine) StartEngine(c *Car) error {
 				if err != nil {
 					log.Printf("Error while handling command: %v\n", err)
 				}
-				/*
-					table := crc8.MakeTable(crc8.CRC8)
-					chksum := crc8.Checksum(buffer[:31], table)
-					if chksum == buffer[31] {
-						doHandleCommand(c, buffer[:cnt])
-					} else {
-						log.Printf("Checksum Error, got: %v, expected: %v", buffer[31], chksum)
-					}
-				*/
 			} else {
 				log.Printf("Error while receving UDP Commands: %v\n", err)
 				s.EndEngine()
@@ -59,6 +51,9 @@ func (s UDPSteeringEngine) StartEngine(c *Car) error {
 }
 
 func doHandleCommand(c *Car, command []byte) error {
+	crc := crc32.New(crc32.MakeTable(crc32.IEEE))
+	crc.Write(command[0 : len(command)-4])
+	calcchksum := crc.Sum32()
 	reader := bytes.NewReader(command)
 	order := binary.BigEndian
 
@@ -102,6 +97,16 @@ func doHandleCommand(c *Car, command []byte) error {
 	err = binary.Read(reader, order, &clrpercent)
 	if err != nil {
 		return errors.New("Could not read camera left/right-percent from command bytes")
+	}
+
+	realchksum := uint32(0)
+	err = binary.Read(reader, order, &realchksum)
+	if err != nil {
+		return errors.New("Could not read crc32 from command bytes")
+	}
+
+	if calcchksum != realchksum {
+		return fmt.Errorf("Invalid Command checksum detected (got: %v, expected: %v). Will skip command", calcchksum, realchksum)
 	}
 
 	log.Printf("Speed: %v, Direction: %v, CamUpDown: %v, CamUpDownPerc: %v, CamLeftRight: %v, CamLeftRightPerc: %v", speed, direction, camupdown, cudpercent, camleftright, clrpercent)

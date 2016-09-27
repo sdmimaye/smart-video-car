@@ -38,11 +38,10 @@ func main() {
 	if err != nil {
 		log.Panicf("Cloud not create new smart car instance. Error: %v", err)
 	}
-	/*
-		s, err := stream.NewTCPStream(1337)
-		if err != nil {
-			log.Panicf("Could not start new TCP Server on port 1337")
-		}
-		car.Listen(*s)*/
-	car.Listen(stream.ConsoleStream{})
+	s, err := stream.NewTCPStream(1337)
+	if err != nil {
+		log.Panicf("Could not start new TCP Server on port 1337")
+	}
+	car.Listen(*s)
+	//	car.Listen(stream.ConsoleStream{})
 }
