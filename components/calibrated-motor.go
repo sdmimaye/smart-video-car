@@ -182,7 +182,9 @@ func (m *CalibratedMotor) SetSpeed(speedPercentage float64) error {
 		return fmt.Errorf("Invalid speed percentage value: %v. Choose a valud between 100 and -100", speedPercentage)
 	}
 
-	pwm := int(math.Abs(40.96 * speedPercentage))
+	pwm := int(math.Abs(4096 * speedPercentage))
+	log.Printf("Motor PWM: %v\n", pwm)
+
 	err0 := hardware.SetPwmValue(m.m0.speedPwmChannel, 0, pwm)
 	err1 := hardware.SetPwmValue(m.m1.speedPwmChannel, 0, pwm)
 

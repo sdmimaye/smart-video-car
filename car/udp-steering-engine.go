@@ -11,6 +11,7 @@ import (
 )
 
 var socket *net.UDPConn
+var crc = crc32.New(crc32.MakeTable(crc32.IEEE))
 
 //UDPSteeringEngine will steer the car over an udp socket
 type UDPSteeringEngine struct {
@@ -51,9 +52,9 @@ func (s UDPSteeringEngine) StartEngine(c *Car) error {
 }
 
 func doHandleCommand(c *Car, command []byte) error {
-	crc := crc32.New(crc32.MakeTable(crc32.IEEE))
-	crc.Write(command[0 : len(command)-4])
-	calcchksum := crc.Sum32()
+	//	crc.Reset()
+	//	crc.Write(command[0 : len(command)-4])
+	//	calcchksum := crc.Sum32()
 	reader := bytes.NewReader(command)
 	order := binary.BigEndian
 
@@ -98,18 +99,18 @@ func doHandleCommand(c *Car, command []byte) error {
 	if err != nil {
 		return errors.New("Could not read camera left/right-percent from command bytes")
 	}
+	/*
+		realchksum := uint32(0)
+		err = binary.Read(reader, order, &realchksum)
+		if err != nil {
+			return errors.New("Could not read crc32 from command bytes")
+		}
 
-	realchksum := uint32(0)
-	err = binary.Read(reader, order, &realchksum)
-	if err != nil {
-		return errors.New("Could not read crc32 from command bytes")
-	}
-
-	if calcchksum != realchksum {
-		return fmt.Errorf("Invalid Command checksum detected (got: %v, expected: %v). Will skip command", calcchksum, realchksum)
-	}
-
-	log.Printf("Speed: %v, Direction: %v, CamUpDown: %v, CamUpDownPerc: %v, CamLeftRight: %v, CamLeftRightPerc: %v", speed, direction, camupdown, cudpercent, camleftright, clrpercent)
+		if calcchksum != realchksum {
+			return fmt.Errorf("Invalid Command checksum detected (got: %v, expected: %v). Will skip command", calcchksum, realchksum)
+		}
+	*/
+	log.Printf("Speed: %v, Direction: %v, DirectionPerc: %v, CamUpDown: %v, CamUpDownPerc: %v, CamLeftRight: %v, CamLeftRightPerc: %v", speed, direction, dirpercent, camupdown, cudpercent, camleftright, clrpercent)
 
 	err = c.Motor.SetSpeed(speed)
 	if err != nil {
