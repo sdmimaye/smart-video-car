@@ -1,9 +1,11 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"sdmimaye.de/smart-video-car/car"
@@ -36,14 +38,25 @@ func main() {
 
 	car, err := car.NewCar()
 	if err != nil {
-		log.Panicf("Cloud not create new smart car instance. Error: %v", err)
+		log.Panicf("Could not create new smart car instance. Error: %v", err)
 	}
-	/*
-		s, err := stream.NewTCPStream(1337)
+	execution := flag.String("e", "console", "The execution type of the application. Valid values are: console or tcp")
+	flag.Parse()
+
+	var s stream.Stream
+	if execution == nil || strings.HasPrefix(*execution, "console") { //fallback to console
+		log.Println("Will start console execution...")
+		s = stream.ConsoleStream{}
+	} else if strings.HasPrefix(*execution, "tcp") {
+		log.Println("Will start tcp execution...")
+		s, err = stream.NewTCPStream(1337)
 		if err != nil {
 			log.Panicf("Could not start new TCP Server on port 1337")
 		}
-		car.Listen(*s)
-	*/
-	car.Listen(stream.ConsoleStream{})
+	} else {
+		log.Panicf("Unknown execution type: %v. Will exit now! (Valid values are: console or tcp)\n", *execution)
+	}
+
+	log.Printf("Exeuction: %v\n", *execution)
+	car.Listen(s)
 }
