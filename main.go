@@ -8,22 +8,14 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/blackjack/webcam"
-
 	"sdmimaye.de/smart-video-car/car"
 	"sdmimaye.de/smart-video-car/hardware"
 	"sdmimaye.de/smart-video-car/stream"
 )
 
 func main() {
-	cam, err := webcam.Open("/dev/video0")
-	if err != nil {
-		panic(err.Error())
-	}
-	defer cam.Close()
-
 	log.Println("Starting new Smart-Video-Car instance...")
-	err = hardware.InitializeServoController()
+	err := hardware.InitializeServoController()
 	if err != nil {
 		log.Panicf("Could not initialize Servo-Controller: %v\r\n", err)
 	}

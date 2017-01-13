@@ -9,7 +9,6 @@ import (
 
 	"sdmimaye.de/smart-video-car/stream"
 
-	"github.com/blackjack/webcam"
 	"github.com/go-ini/ini"
 )
 
@@ -53,11 +52,12 @@ func doLoadIniWithMatchingSectionOrCreateEmptyForCamera() (*ini.File, *ini.Secti
 func NewCalibratedCamera() (*CalibratedCamera, error) {
 	cam := CalibratedCamera{}
 
-	web, err := webcam.Open("/dev/video0")
-	if err != nil {
-		return nil, fmt.Errorf("Could not initialize WebCam. Error: %v", err.Error())
-	}
-
+	/*
+		web, err := webcam.Open("/dev/video0")
+		if err != nil {
+			return nil, fmt.Errorf("Could not initialize WebCam. Error: %v", err.Error())
+		}
+	*/
 	cam.servos = make([]CalibratedServo, len(servos))
 	for i, channel := range servos {
 		servo, err := NewCalibratedServo(channel)
